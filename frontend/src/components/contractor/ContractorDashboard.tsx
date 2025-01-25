@@ -74,55 +74,80 @@ export function ContractorDashboard() {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header with Notifications */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-foreground">Contractor Dashboard</h1>
-        <Notifications
-          notifications={notifications}
-          onNotificationRead={handleNotificationRead}
-          className="ml-auto"
-        />
+      <div className="flex items-center justify-between mb-8">
+        <div className="space-y-1.5">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Contractor Dashboard</h1>
+          <p className="text-base text-muted-foreground">Welcome back, {currentContractor.name}</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <Notifications
+            notifications={notifications}
+            onNotificationRead={handleNotificationRead}
+            className="relative hover:bg-primary/5 rounded-full p-2 transition-all duration-200 border border-primary/10 hover:shadow-md"
+            badgeClassName="bg-primary text-primary-foreground animate-pulse"
+            iconClassName="h-5 w-5 text-primary"
+            tooltipContent="View Notifications"
+            tooltipSide="bottom"
+          />
+        </div>
       </div>
 
       {/* Dashboard Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           title="Upcoming Jobs"
           value={upcomingJobs}
           icon={Truck}
           description={`${assignedOrders.length} total assignments`}
+          className="bg-primary/5 border-primary/10"
         />
         <StatCard
           title="Total Distance"
           value={formatDistance(totalDistance)}
           icon={MapPin}
           description="Estimated travel distance"
+          className="bg-accent/5 border-accent/10"
         />
         <StatCard
           title="Total Hours"
           value={formatDuration(totalHours)}
           icon={Timer}
           description="Scheduled work hours"
-        />
+          className="bg-secondary/5 border-secondary/10"
       </div>
 
       {/* Notifications have been moved to the bell icon in the top right */}
 
       {/* Calendar View */}
-      <CalendarView
-        events={assignedOrders.map(order => ({
-          id: order.id,
-          title: `${order.serviceType} - ${order.customerName}`,
-          start: new Date(order.requestedDateTime),
-          end: moment(order.requestedDateTime).add(4, 'hours').toDate(), // Assuming 4-hour jobs
-          status: order.status,
-          customerName: order.customerName,
-          address: order.address,
-          serviceType: order.serviceType,
-        }))}
-        onEventClick={(event) => {
-          console.log('Clicked event:', event);
-        }}
-      />
+      <Card className="shadow-card hover:shadow-card-hover transition-all duration-200">
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold tracking-tight leading-tight">Your Schedule</CardTitle>
+          <CardDescription>View and manage your upcoming assignments</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <CalendarView
+            events={assignedOrders.map(order => ({
+              id: order.id,
+              title: `${order.serviceType} - ${order.customerName}`,
+              start: new Date(order.requestedDateTime),
+              end: moment(order.requestedDateTime).add(
+                order.serviceType === 'moving' ? 6 : 
+                order.serviceType === 'packing' ? 4 : 
+                order.serviceType === 'cleaning' ? 3 : 2, 
+                'hours'
+              ).toDate(),
+              status: order.status,
+              customerName: order.customerName,
+              address: order.address,
+              serviceType: order.serviceType,
+            }))}
+            onEventClick={(event) => {
+              console.log('Clicked event:', event);
+            }}
+            className="border-none rounded-none"
+          />
+        </CardContent>
+      </Card>
 
       {/* Assigned Jobs */}
       <Card>
@@ -159,12 +184,12 @@ export function ContractorDashboard() {
       {mockContractors[0].availability.some(day => 
         day.slots.filter(Boolean).length / day.slots.length < 0.3
       ) && (
-        <Alert className="bg-yellow-50 border-yellow-200">
-          <AlertTitle className="text-yellow-800 flex items-center gap-2">
+        <Alert className="bg-warning/10 border-warning/20 shadow-sm hover:shadow-md transition-all duration-200">
+          <AlertTitle className="text-warning-foreground/90 flex items-center gap-2 font-semibold">
             <AlertTriangle className="h-4 w-4" />
             High Demand Alert
           </AlertTitle>
-          <AlertDescription className="text-yellow-700">
+          <AlertDescription className="text-warning-foreground/80">
             Some days next week are showing high demand. Please update your availability if possible.
           </AlertDescription>
         </Alert>
@@ -215,16 +240,30 @@ export function ContractorDashboard() {
             <div className="space-y-2">
               <Label>Performance Metrics</Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-blue-50 hover:bg-blue-100/80 transition-colors rounded-lg p-4">
-                  <div className="text-sm font-medium text-blue-700">Completed Jobs</div>
-                  <div className="text-2xl font-bold text-blue-900 mt-1">
-                    {assignedOrders.filter(o => o.status === 'completed').length}
+                <div className="bg-primary/5 hover:bg-primary/10 transition-all duration-200 rounded-lg p-6 border border-primary/10 shadow-sm hover:shadow-md">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <CheckCircle2 className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-primary/90">Completed Jobs</div>
+                      <div className="text-2xl font-bold text-primary mt-1">
+                        {assignedOrders.filter(o => o.status === 'completed').length}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="bg-green-50 hover:bg-green-100/80 transition-colors rounded-lg p-4">
-                  <div className="text-sm font-medium text-green-700">On-Time Rate</div>
-                  <div className="text-2xl font-bold text-green-900 mt-1">
-                    {totalCompleted > 0 ? `${Math.round((completedOnTime / totalCompleted) * 100)}%` : 'N/A'}
+                <div className="bg-accent/5 hover:bg-accent/10 transition-all duration-200 rounded-lg p-6 border border-accent/10 shadow-sm hover:shadow-md">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
+                      <Clock className="h-5 w-5 text-accent" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-accent/90">On-Time Rate</div>
+                      <div className="text-2xl font-bold text-accent mt-1">
+                        {totalCompleted > 0 ? `${Math.round((completedOnTime / totalCompleted) * 100)}%` : 'N/A'}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

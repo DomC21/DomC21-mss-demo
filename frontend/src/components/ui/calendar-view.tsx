@@ -37,7 +37,11 @@ export function CalendarView({ events, onEventClick, className }: CalendarViewPr
       border: '0',
       display: 'block',
       transition: 'all 200ms',
-      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+      padding: '4px 8px',
+      fontSize: '0.875rem',
+      lineHeight: '1.25rem',
+      fontWeight: 500,
     };
     return { style };
   };
@@ -53,15 +57,70 @@ export function CalendarView({ events, onEventClick, className }: CalendarViewPr
     return colors[status as keyof typeof colors] || 'hsl(var(--muted))';
   };
 
+  const getEventDuration = (serviceType: string) => {
+    switch (serviceType) {
+      case 'moving':
+        return 6; // 6 hours for moving
+      case 'packing':
+        return 4; // 4 hours for packing
+      case 'cleaning':
+        return 3; // 3 hours for cleaning
+      case 'storage':
+        return 2; // 2 hours for storage
+      default:
+        return 4; // Default duration
+    }
+  };
+
   return (
     <Card className={cn('min-h-[600px] shadow-card hover:shadow-card-hover transition-all duration-200', className)}>
       <CardHeader className="space-y-2">
-        <CardTitle className="text-2xl font-semibold tracking-tight leading-tight">Schedule</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-2xl font-semibold tracking-tight leading-tight">Schedule</CardTitle>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setView('month')}
+              className={cn(
+                "font-medium",
+                view === 'month' && "bg-primary/10 text-primary border-primary/50"
+              )}
+            >
+              Month
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setView('week')}
+              className={cn(
+                "font-medium",
+                view === 'week' && "bg-primary/10 text-primary border-primary/50"
+              )}
+            >
+              Week
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setView('day')}
+              className={cn(
+                "font-medium",
+                view === 'day' && "bg-primary/10 text-primary border-primary/50"
+              )}
+            >
+              Day
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="pt-4">
         <Calendar
           localizer={localizer}
-          events={events}
+          events={events.map(event => ({
+            ...event,
+            end: moment(event.start).add(getEventDuration(event.serviceType), 'hours').toDate()
+          }))}
           startAccessor="start"
           endAccessor="end"
           style={{ height: 500 }}
@@ -74,12 +133,18 @@ export function CalendarView({ events, onEventClick, className }: CalendarViewPr
             timeGutterFormat: 'ha',
             eventTimeRangeFormat: ({ start, end }) =>
               `${moment(start).format('ha')} - ${moment(end).format('ha')}`,
+            eventTimeRangeEndFormat: ({ start, end }) =>
+              `${moment(end).format('ha')}`,
           }}
-          tooltipAccessor={(event) => `
-            ${(event as CalendarEvent).customerName}
-            ${(event as CalendarEvent).address}
-            ${(event as CalendarEvent).serviceType}
-          `}
+          tooltipAccessor={(event) => {
+            const e = event as CalendarEvent;
+            return `
+              ${e.customerName}
+              ${e.address}
+              ${e.serviceType.charAt(0).toUpperCase() + e.serviceType.slice(1)}
+              Duration: ${getEventDuration(e.serviceType)} hours
+            `;
+          }}
         />
       </CardContent>
     </Card>
