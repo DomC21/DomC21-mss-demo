@@ -7,6 +7,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -29,9 +35,21 @@ interface NotificationsProps {
   notifications: Notification[];
   onNotificationRead?: (id: string) => void;
   className?: string;
+  iconClassName?: string;
+  badgeClassName?: string;
+  tooltipContent?: string;
+  tooltipSide?: 'top' | 'right' | 'bottom' | 'left';
 }
 
-export function Notifications({ notifications, onNotificationRead, className }: NotificationsProps) {
+export function Notifications({ 
+  notifications, 
+  onNotificationRead, 
+  className,
+  iconClassName,
+  badgeClassName,
+  tooltipContent,
+  tooltipSide = 'bottom'
+}: NotificationsProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
 
@@ -54,18 +72,27 @@ export function Notifications({ notifications, onNotificationRead, className }: 
     <div className={className}>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative hover:bg-primary-blue/10"
-          >
-            <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-white flex items-center justify-center">
-                {unreadCount}
-              </span>
-            )}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative hover:bg-primary-blue/10"
+                >
+                  <Bell className={cn("h-5 w-5", iconClassName)} />
+                  {unreadCount > 0 && (
+                    <span className={cn("absolute -top-1 -right-1 h-4 w-4 rounded-full text-[10px] font-medium flex items-center justify-center", badgeClassName || "bg-primary text-white")}>
+                      {unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side={tooltipSide}>
+                {tooltipContent || "View Notifications"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </SheetTrigger>
         <SheetContent className="w-[400px] sm:max-w-none">
           <SheetHeader>

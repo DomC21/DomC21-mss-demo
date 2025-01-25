@@ -4,6 +4,7 @@ import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import '@/styles/calendar.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const localizer = momentLocalizer(moment);
@@ -133,7 +134,7 @@ export function CalendarView({ events, onEventClick, className }: CalendarViewPr
             timeGutterFormat: 'ha',
             eventTimeRangeFormat: ({ start, end }) =>
               `${moment(start).format('ha')} - ${moment(end).format('ha')}`,
-            eventTimeRangeEndFormat: ({ start, end }) =>
+            eventTimeRangeEndFormat: ({ end }) =>
               `${moment(end).format('ha')}`,
           }}
           tooltipAccessor={(event) => {

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Calendar, Star, CheckCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { Calendar, Star, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { mockOrders } from '@/mocks/data';
 import { formatCurrency, getOrderStatusColor } from '@/lib/utils';

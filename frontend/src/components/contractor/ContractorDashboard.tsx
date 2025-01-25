@@ -114,6 +114,7 @@ export function ContractorDashboard() {
           icon={Timer}
           description="Scheduled work hours"
           className="bg-secondary/5 border-secondary/10"
+        />
       </div>
 
       {/* Notifications have been moved to the bell icon in the top right */}

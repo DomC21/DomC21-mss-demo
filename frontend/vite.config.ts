@@ -10,12 +10,12 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  preview: {
+  server: {
     host: true,
-    port: 4173,
+    port: 5173,
     strictPort: true,
     allowedHosts: [
-      'mss-order-intake-app-tunnel-zpmwxu0z.devinapps.com',
+      'mss-order-intake-app-tunnel-h02ikbp8.devinapps.com',
       'localhost',
       '127.0.0.1'
     ],
@@ -27,7 +27,6 @@ export default defineConfig({
     fs: {
       strict: true,
     },
-    middlewareMode: false,
   },
   build: {
     outDir: 'dist',
