@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { Twitter, Linkedin, Github } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
 
 const queryClient = new QueryClient();
 

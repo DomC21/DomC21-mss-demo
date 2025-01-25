@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
@@ -14,12 +15,84 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 export function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [serviceFilter, setServiceFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState<{
+    start: string;
+    end: string;
+  }>({
+    start: '',
+    end: '',
+  });
 
-  const filteredOrders = mockOrders.filter(order => {
+  type SortableFields = 'id' | 'customerName' | 'serviceType' | 'requestedDateTime' | 'estimatedValue' | 'status';
+  
+  const [sortConfig, setSortConfig] = useState<{
+    key: SortableFields | null;
+    direction: 'asc' | 'desc';
+  }>({
+    key: null,
+    direction: 'asc',
+  });
+
+  const handleSort = (key: SortableFields) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  let filteredOrders = mockOrders.filter(order => {
+    // Status filter
     if (statusFilter !== 'all' && order.status !== statusFilter) return false;
+    
+    // Service filter
     if (serviceFilter !== 'all' && order.serviceType !== serviceFilter) return false;
+    
+    // Search term
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        order.id.toLowerCase().includes(searchLower) ||
+        order.customerName.toLowerCase().includes(searchLower) ||
+        order.address.toLowerCase().includes(searchLower);
+      if (!matchesSearch) return false;
+    }
+
+    // Date range filter
+    if (dateRange.start && dateRange.end) {
+      const orderDate = new Date(order.requestedDateTime);
+      const startDate = new Date(dateRange.start);
+      const endDate = new Date(dateRange.end);
+      if (orderDate < startDate || orderDate > endDate) return false;
+    }
+
     return true;
   });
+
+  // Apply sorting
+  if (sortConfig.key) {
+    filteredOrders = [...filteredOrders].sort((a, b) => {
+      const aValue = a[sortConfig.key!];
+      const bValue = b[sortConfig.key!];
+      
+      if (sortConfig.key === 'estimatedValue') {
+        return sortConfig.direction === 'asc' 
+          ? (a.estimatedValue - b.estimatedValue)
+          : (b.estimatedValue - a.estimatedValue);
+      }
+      
+      if (sortConfig.key === 'requestedDateTime') {
+        return sortConfig.direction === 'asc'
+          ? new Date(a.requestedDateTime).getTime() - new Date(b.requestedDateTime).getTime()
+          : new Date(b.requestedDateTime).getTime() - new Date(a.requestedDateTime).getTime();
+      }
+      
+      // String comparison for other fields
+      return sortConfig.direction === 'asc'
+        ? String(aValue).localeCompare(String(bValue))
+        : String(bValue).localeCompare(String(aValue));
+    });
+  }
 
   interface RevenueData {
     date: string;
@@ -39,52 +112,69 @@ export function AdminDashboard() {
 
   return (
     <div className="container section-spacing">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="shadow-card hover:shadow-card-hover transition-all duration-200">
+      {/* Quick Stats Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="col-span-full">
+          <h2 className="text-3xl font-bold tracking-tight mb-6">Dashboard Overview</h2>
+        </div>
+        <Card className="shadow-card hover:shadow-card-hover transition-all duration-200 bg-gradient-to-br from-primary/5 to-transparent dark:from-primary/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-base font-semibold text-muted-foreground/90">Total Orders</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground/80" />
+            <CardTitle className="text-base font-semibold text-primary/90">Total Orders</CardTitle>
+            <div className="rounded-full bg-primary/10 p-2">
+              <Package className="h-4 w-4 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight leading-tight">{mockOrders.length}</div>
-            <p className="text-sm text-muted-foreground/90 mt-2">
-              {mockOrders.filter(o => o.status === 'pending').length} pending
-            </p>
+            <div className="text-3xl font-bold tracking-tight leading-tight text-primary">{mockOrders.length}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                {mockOrders.filter(o => o.status === 'pending').length} pending
+              </Badge>
+            </div>
           </CardContent>
         </Card>
-        <Card className="shadow-card hover:shadow-card-hover transition-shadow">
+        <Card className="shadow-card hover:shadow-card-hover transition-all duration-200 bg-gradient-to-br from-accent/5 to-transparent dark:from-accent/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-base font-semibold text-muted-foreground">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base font-semibold text-accent/90">Total Revenue</CardTitle>
+            <div className="rounded-full bg-accent/10 p-2">
+              <DollarSign className="h-4 w-4 text-accent" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight">{formatCurrency(mockCapacityData.totalRevenue)}</div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Avg. {formatCurrency(mockCapacityData.totalRevenue / mockOrders.length)} per order
-            </p>
+            <div className="text-3xl font-bold tracking-tight text-accent">{formatCurrency(mockCapacityData.totalRevenue)}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary" className="bg-accent/10 text-accent hover:bg-accent/20">
+                Avg. {formatCurrency(mockCapacityData.totalRevenue / mockOrders.length)} per order
+              </Badge>
+            </div>
           </CardContent>
         </Card>
-        <Card className="shadow-card hover:shadow-card-hover transition-shadow">
+        <Card className="shadow-card hover:shadow-card-hover transition-all duration-200 bg-gradient-to-br from-secondary/5 to-transparent dark:from-secondary/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-base font-semibold text-muted-foreground">Capacity Utilization</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base font-semibold text-secondary/90">Capacity Utilization</CardTitle>
+            <div className="rounded-full bg-secondary/10 p-2">
+              <Users className="h-4 w-4 text-secondary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight">{mockCapacityData.currentCapacity}%</div>
+            <div className="text-3xl font-bold tracking-tight text-secondary">{mockCapacityData.currentCapacity}%</div>
             <Progress value={mockCapacityData.currentCapacity} className="mt-2" />
           </CardContent>
         </Card>
-        <Card className="shadow-card hover:shadow-card-hover transition-shadow">
+        <Card className="shadow-card hover:shadow-card-hover transition-all duration-200 bg-gradient-to-br from-destructive/5 to-transparent dark:from-destructive/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-base font-semibold text-muted-foreground">High Priority</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base font-semibold text-destructive/90">High Priority</CardTitle>
+            <div className="rounded-full bg-destructive/10 p-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight">{mockCapacityData.highPriorityOrders}</div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Requires immediate attention
-            </p>
+            <div className="text-3xl font-bold tracking-tight text-destructive">{mockCapacityData.highPriorityOrders}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="destructive" className="bg-destructive/10 hover:bg-destructive/20">
+                Requires immediate attention
+              </Badge>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -122,8 +212,41 @@ export function AdminDashboard() {
       {/* Orders Table */}
       <Card className="shadow-card hover:shadow-card-hover transition-all duration-200">
         <CardHeader className="space-y-6">
-          <CardTitle className="text-2xl font-semibold tracking-tight leading-tight">Recent Orders</CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl font-semibold tracking-tight leading-tight">Recent Orders</CardTitle>
+              <CardDescription className="mt-2">
+                Showing {filteredOrders.length} of {mockOrders.length} orders
+                {(statusFilter !== 'all' || serviceFilter !== 'all' || searchTerm || (dateRange.start && dateRange.end)) && (
+                  <span className="text-muted-foreground/80"> (filtered)</span>
+                )}
+              </CardDescription>
+            </div>
+          </div>
           <div className="flex flex-wrap gap-4">
+            <div className="flex-1 max-w-md">
+              <Input
+                placeholder="Search orders by ID, customer, or address..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-10"
+              />
+            </div>
+            <div className="flex items-center gap-4">
+              <Input
+                type="date"
+                value={dateRange.start}
+                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                className="w-40 h-10"
+              />
+              <span className="text-muted-foreground">to</span>
+              <Input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                className="w-40 h-10"
+              />
+            </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by status" />
@@ -155,16 +278,59 @@ export function AdminDashboard() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Service</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:text-primary transition-colors"
+                  onClick={() => handleSort('id')}
+                >
+                  Order ID {sortConfig.key === 'id' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:text-primary transition-colors"
+                  onClick={() => handleSort('customerName')}
+                >
+                  Customer {sortConfig.key === 'customerName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:text-primary transition-colors"
+                  onClick={() => handleSort('serviceType')}
+                >
+                  Service {sortConfig.key === 'serviceType' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:text-primary transition-colors"
+                  onClick={() => handleSort('requestedDateTime')}
+                >
+                  Date {sortConfig.key === 'requestedDateTime' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:text-primary transition-colors"
+                  onClick={() => handleSort('estimatedValue')}
+                >
+                  Value {sortConfig.key === 'estimatedValue' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:text-primary transition-colors"
+                  onClick={() => handleSort('status')}
+                >
+                  Status {sortConfig.key === 'status' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredOrders.map((order) => (
+              {filteredOrders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-32 text-center">
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <Package className="h-8 w-8 mb-4" />
+                      <p className="text-sm">No orders found</p>
+                      {(statusFilter !== 'all' || serviceFilter !== 'all' || searchTerm || (dateRange.start && dateRange.end)) && (
+                        <p className="text-xs mt-1">Try adjusting your filters</p>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredOrders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-medium">{order.id}</TableCell>
                   <TableCell>{order.customerName}</TableCell>
@@ -177,7 +343,7 @@ export function AdminDashboard() {
                     </Badge>
                   </TableCell>
                 </TableRow>
-              ))}
+              )))}
             </TableBody>
           </Table>
         </CardContent>

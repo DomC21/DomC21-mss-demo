@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// Removed unused imports
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -64,15 +64,15 @@ export function OrderIntakeForm() {
   });
 
   // Track form completion for each step
-  const [stepCompletion, setStepCompletion] = useState({
+  const [stepCompletion, setStepCompletion] = useState<Record<number, boolean>>({
     0: false, // Personal Information
     1: false  // Service Details
   });
 
   // Update step completion status
   useEffect(() => {
-    const personalInfoFields = ['customerName', 'email', 'phone', 'address'];
-    const serviceDetailsFields = ['serviceType', 'requestedDateTime', 'estimatedValue'];
+    const personalInfoFields = ['customerName', 'email', 'phone', 'address'] as const;
+    const serviceDetailsFields = ['serviceType', 'requestedDateTime', 'estimatedValue'] as const;
     
     const personalInfoComplete = personalInfoFields.every(field => {
       const fieldState = form.getFieldState(field);
@@ -89,7 +89,7 @@ export function OrderIntakeForm() {
       0: personalInfoComplete,
       1: serviceDetailsComplete
     }));
-  }, [form.formState]);
+  }, [form]);
 
   const onSubmit = async (data: FormData) => {
     // In a real app, this would make an API call
@@ -323,7 +323,7 @@ export function OrderIntakeForm() {
                             ? "border-primary bg-primary/5 shadow-sm"
                             : "border-input/50"
                         )}
-                        onClick={() => form.setValue('serviceType', service.value)}
+                        onClick={() => form.setValue('serviceType', service.value as 'moving' | 'packing' | 'storage' | 'cleaning')}
                       >
                         <div className="flex items-start gap-3">
                           <RadioGroupItem
@@ -442,7 +442,7 @@ export function OrderIntakeForm() {
                   className="ml-auto font-medium tracking-tight min-w-[180px] h-14 shadow-sm hover:shadow-card transition-all duration-200"
                   onClick={async () => {
                     const currentFields = steps[currentStep].fields;
-                    const isStepValid = await form.trigger(currentFields as any[]);
+                    const isStepValid = await form.trigger(currentFields as (keyof FormData)[]);
                     if (isStepValid) {
                       setCurrentStep(current => current + 1);
                     }
