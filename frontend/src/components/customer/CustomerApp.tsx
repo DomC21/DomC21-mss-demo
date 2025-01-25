@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Calendar, Star, CheckCircle } from 'lucide-react';
+import { Calendar, Star, CheckCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { mockOrders } from '@/mocks/data';
 import { formatCurrency, getOrderStatusColor } from '@/lib/utils';
 
@@ -77,33 +78,76 @@ export function CustomerApp() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="relative">
-            <div className="flex justify-between mb-2">
-              {['Order Received', 'Team Confirmed', 'In Progress', 'Completed'].map((step, index) => (
-                <div
-                  key={step}
-                  className="flex flex-col items-center relative z-10"
-                >
+          <div className="relative space-y-8">
+            {/* Progress Bar */}
+            <div className="relative">
+              <div className="flex justify-between mb-2">
+                {['Order Received', 'Team Confirmed', 'In Progress', 'Completed'].map((step, index) => (
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      index <= getStatusStep(currentOrder.status)
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-muted'
-                    }`}
+                    key={step}
+                    className="flex flex-col items-center relative z-10"
                   >
-                    {index + 1}
+                    <div
+                      className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200",
+                        index <= getStatusStep(currentOrder.status)
+                          ? "bg-primary text-primary-foreground shadow-lg"
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {index + 1}
+                    </div>
+                    <span className={cn(
+                      "text-sm font-medium mt-2 transition-colors duration-200",
+                      index <= getStatusStep(currentOrder.status)
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                    )}>{step}</span>
                   </div>
-                  <span className="text-sm mt-2">{step}</span>
+                ))}
+              </div>
+              <div className="absolute top-5 left-0 w-full h-0.5 bg-muted">
+                <div
+                  className="h-full bg-primary transition-all duration-500 ease-in-out"
+                  style={{
+                    width: `${(getStatusStep(currentOrder.status) / 3) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Timeline */}
+            <div className="border-l-2 border-muted pl-6 space-y-6">
+              {[
+                { label: 'Order Received', time: '10:00 AM', status: 'completed', description: 'Your order has been received and is being processed.' },
+                { label: 'Team Assignment', time: '10:30 AM', status: currentOrder.status === 'confirmed' ? 'completed' : 'pending', description: 'Our team is reviewing your request and assigning the best crew.' },
+                { label: 'Team Confirmed', time: '11:00 AM', status: currentOrder.status === 'confirmed' ? 'completed' : 'pending', description: 'Your moving team has been confirmed.' },
+                { label: 'In Progress', time: '2:00 PM', status: currentOrder.status === 'in_progress' ? 'active' : 'pending', description: 'Your moving team is on the way.' },
+                { label: 'Completed', time: '5:00 PM', status: currentOrder.status === 'completed' ? 'completed' : 'pending', description: 'Moving service completed successfully.' },
+              ].map((item, index) => (
+                <div key={index} className="relative">
+                  <div className="absolute -left-[31px] mt-1">
+                    <div className={cn(
+                      "w-4 h-4 rounded-full border-2",
+                      item.status === 'completed' ? "bg-primary border-primary" :
+                      item.status === 'active' ? "bg-warning border-warning animate-pulse" :
+                      "bg-background border-muted"
+                    )} />
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "font-medium",
+                        item.status === 'completed' ? "text-primary" :
+                        item.status === 'active' ? "text-warning" :
+                        "text-muted-foreground"
+                      )}>{item.label}</span>
+                      <span className="text-sm text-muted-foreground">{item.time}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+                  </div>
                 </div>
               ))}
-            </div>
-            <div className="absolute top-4 left-0 w-full h-0.5 bg-muted">
-              <div
-                className="h-full bg-blue-500 transition-all"
-                style={{
-                  width: `${(getStatusStep(currentOrder.status) / 3) * 100}%`,
-                }}
-              />
             </div>
           </div>
         </CardContent>
